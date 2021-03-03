@@ -1,12 +1,5 @@
 #!/bin/bash
 
-#Root Check
-if [[ "$EUID" -ne 0 ]]; then
-    echo "Error: This command requires root access."
-    exit 1
-fi
-
-
 #Functions
 helpCommand () {
     echo "gsudo v1.1"
@@ -64,5 +57,11 @@ if [[ $1 = "-a" ]]; then
 fi
 
 #Run Command
+##Root check
+if [[ "$EUID" -ne 0 ]]; then
+    echo "Error: This command requires root access."
+    exit 1
+fi
+
 echo "Launching $application..."
 DUMMY=$(sh -c "sudo pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY KDE_SESSION_VERSION=5 KDE_FULL_SESSION=true $commandLine >/dev/null 2>&1 &")
