@@ -1,0 +1,68 @@
+#!/bin/bash
+
+#Root Check
+if [[ "$EUID" -ne 0 ]]; then
+    echo "Error: This command requires root access."
+    exit 1
+fi
+
+
+#Functions
+helpCommand () {
+    echo "gsudo v1.1"
+    echo "------------------------------------------------------------"
+    echo "Usage: gsu application"
+    echo "       gsu application {options}"
+    printf "\n"
+    echo "Options:"
+    echo "None at the moment."
+}
+
+aboutCommand () {
+    echo "gsudo v1.1"
+    echo "------------------------------------------------------------"
+    echo "Author: dolfies"
+    echo "A simple script that runs GUI applications with root access."
+    printf "\n"
+    echo "https://github.com/dolfies/gsu"
+}
+
+#Variables
+application=$1
+commandLine=$@
+
+#Help Command
+if [[ $1 = "--help" ]]; then
+    helpCommand
+    exit
+fi
+
+if [[ $1 = "-?" ]]; then
+    helpCommand
+    exit
+fi
+
+if [[ $1 = "-h" ]]; then
+    helpCommand
+    exit
+fi
+
+if [[ $# -eq 0 ]]; then
+    helpCommand
+    exit
+fi
+
+#About Command
+if [[ $1 = "--about" ]]; then
+    aboutCommand
+    exit
+fi
+
+if [[ $1 = "-a" ]]; then
+    aboutCommand
+    exit
+fi
+
+#Run Command
+echo "Launching $application..."
+DUMMY=$(sh -c "sudo pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY KDE_SESSION_VERSION=5 KDE_FULL_SESSION=true $commandLine >/dev/null 2>&1 &")
