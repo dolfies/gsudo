@@ -2,27 +2,28 @@
 
 #Functions
 helpCommand () {
-    echo "gsudo v1.1"
+    echo "gsudo v$VERSION"
     echo "------------------------------------------------------------"
-    echo "Usage: gsu application"
-    echo "       gsu application {options}"
+    echo "Usage: gsudo application"
+    echo "       gsudo application {options}"
     printf "\n"
     echo "Options:"
     echo "None at the moment."
 }
 
 aboutCommand () {
-    echo "gsudo v1.1"
+    echo "gsudo v$VERSION"
     echo "------------------------------------------------------------"
     echo "Author: dolfies"
     echo "A simple script that runs GUI applications with root access."
     printf "\n"
-    echo "https://github.com/dolfies/gsu"
+    echo "https://github.com/dolfies/gsudo"
 }
 
 #Variables
 application=$1
 commandLine=$@
+VERSION=1.2.1
 
 #Help Command
 if [[ $1 = "--help" ]]; then
