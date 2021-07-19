@@ -26,33 +26,13 @@ commandLine=$@
 VERSION=1.2.1
 
 #Help Command
-if [[ $1 = "--help" ]]; then
-    helpCommand
-    exit
-fi
-
-if [[ $1 = "-?" ]]; then
-    helpCommand
-    exit
-fi
-
-if [[ $1 = "-h" ]]; then
-    helpCommand
-    exit
-fi
-
-if [[ $# -eq 0 ]]; then
+if [[ "$1" == "--help" || "$1" == "-?" || "$#" -eq 0 ]]; then
     helpCommand
     exit
 fi
 
 #About Command
-if [[ $1 = "--about" ]]; then
-    aboutCommand
-    exit
-fi
-
-if [[ $1 = "-a" ]]; then
+if [[ "$1" = "--about" || "$1" = "-a" ]]; then
     aboutCommand
     exit
 fi
