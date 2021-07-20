@@ -1,15 +1,6 @@
 #!/bin/bash
 
 #Functions
-helpCommand () {
-    echo "gsudo v$VERSION"
-    echo "------------------------------------------------------------"
-    echo "Usage: gsudo application"
-    echo "       gsudo application {options}"
-    printf "\n"
-    echo "Options:"
-    echo "None at the moment."
-}
 
 aboutCommand () {
     echo "gsudo v$VERSION"
@@ -20,23 +11,121 @@ aboutCommand () {
     echo "https://github.com/dolfies/gsudo"
 }
 
+error () {
+    printf "\e[1mgsudo:\e[21m \e[31merror:\e[0m ${1}\n"
+    exit
+}
+
 #Variables
 application=$1
 commandLine=$@
-VERSION=1.2.1
+VERSION=1.3.3
+#Variables: gsudo defaults
+STDOUT=/dev/tty
+STDERR=/dev/tty
+SLEEP_TIME_BEFORE_EXITTING=0s
+RUNINBACKGROUND=true
+OVERWRITE_STDOUT_FILE=">"
+OVERWRITE_STDERR_FILE=">"
+RUN_IN_BACKGROUND="&"
+ENVIRONMENT_VARIABLES="DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY KDE_SESSION_VERSION=5 KDE_FULL_SESSION=true"
+RUN_AS_ASKPASS=""
+RUN_IN_BACKGROUND="&"
+SHOW_RETURN_CODE=true
 
-#Help Command
-if [[ "$1" == "--help" || "$1" == "-?" || "$#" -eq 0 ]]; then
-    helpCommand
-    exit
+helpCommand () {
+    echo "gsudo v$VERSION"
+    echo "------------------------------------------------------------"
+    echo "Usage: gsudo --execute=application"
+    echo "       gsudo --execute=application {options}"
+    printf "\n"
+    echo "Options:"
+    echo "--execute=\"app -vv --option --arg=val\"    Execute a program"
+    echo "--sleep-before-exit NUMBER[s, m, h]       Sleeps for NUMBER seconds/minutes/hours before exitting"
+    echo "--stdout|-o=/path/to/stdout               Path to file where regular output should be written"
+    echo "--stderr|-e=/path/to/stdout               Path to file where error messages should be written"
+    echo "--environment-append=\"VARIABLE1=a,...\"    Append environment variables to the default ones"
+    echo "--environment-variables=\"VARIABLE1=a,...\" Overwrite default environment variables"
+    echo "--environment-file=FILEPATH               Read environment from a file with following format: env=val env2=val2"
+    echo "---------------------------------------------------------------------------------------------------------------"
+    echo "-?|--help                                 Shows this help message"
+    echo "-v|--version                              Shows gsudo's version and exits"
+    echo "-a|--about                                Shows information about gsudo and exits"
+    echo "---------------------------------------------------------------------------------------------------------------"
+    echo "--overwrite-stdout-file                   Overwrites stdout file instead of appending to it (see --stdout)"
+    echo "--overwrite-stderr-file                   Overwrites stderr file instead of appending to it (see --stderr)"
+    echo "--no-askpass                              Disables usage of an askpass script/program"
+    echo "--not-background                          Does not run in background"
+    echo "--hide-return-code                        Hides return code (always on for background tasks)"
+    echo "---------------------------------------------------------------------------------------------------------------"
+    echo "STDOUT is the regular text printed to the terminal, STDERR is the text indicating about errors."
+}
+
+# Gets askpass solution FIXME, add more
+if [ "$(which kdialog)" != "/usr/bin/which: no kdialog in ($PATH)" ]; then
+    SUDO_ASKPASS="askpass/kdialog_askpass.sh"
+    RUN_AS_ASKPASS="-A"
+elif [ "$(which ssh-askpass)" != "/usr/bin/which: no ssh-askpass in ($PATH)" ]; then
+    SUDO_ASKPASS="ssh-askpass"
+    RUN_AS_ASKPASS="-A"
 fi
 
-#About Command
-if [[ "$1" = "--about" || "$1" = "-a" ]]; then
-    aboutCommand
-    exit
-fi
+
+for i in "$@"; do
+    case $i in
+        --sleep-before-exit=*) SLEEP_TIME_BEFORE_EXITTING="${i#*=}" && shift ;;
+        -e=*|--execute=*) export commandToExec="${i#*=}"&&shift;;
+        -\?|--help|"") helpCommand && exit ;;
+        -v|--version) echo "gsudo version: v$VERSION" && exit ;;
+        -a|--about) aboutCommand && exit ;;
+        -o=*|--stdout=*)
+            if echo -n > "${i#*=}"; then
+                STDOUT="${i#*=}"
+            else
+                error "Cannot write to ${i#*=}"
+            fi
+            shift;;
+        -e=*|--stderr=*)
+            if echo -n > "${i#*=}"; then
+                STDERR="${i#*=}"
+            else
+                error "Cannot write to ${i#*=}"
+            fi
+            shift;;
+        --overwrite-stdout-file) OVERWRITE_STDOUT_FILE="" && shift ;;
+        --not-background) RUN_IN_BACKGROUND="" && shift ;;
+        --overwrite-stderr-file) OVERWRITE_STDERR_FILE="" && shift ;;
+        --environment-append=*) ENV_TO_APPEND=" ${i#*=}" && ENVIRONMENT_VARIABLES=ENVIRONMENT_VARIABLES+ENV_TO_APPEND && shift ;;
+        --environment-variables=*) ENVIRONMENT_VARIABLES="${i#*=}" && shift ;;
+        --hide-return-code) SHOW_RETURN_CODE=false && shift ;;
+        --environment-file=*)
+            FILE_CONTENT=$(cat "${i#*=}")
+            if [ "${FILE_CONTENT}" = "cat: ${i#*=}: Permission denied" ]; then
+                error "Failed to read from environment variable file: Permission denied"
+            elif [ "${FILE_CONTENT}" = "cat: ${i#*=}: No sure file or directory" ]; then
+                error "Failed to read from environment variable file: No such file or directory"
+            else
+                ENVIRONMENT_VARIABLES="${FILE_CONTENT}${ENV_TO_APPEND}"
+            fi
+            shift
+        ;;
+        --no-askpass) SUDO_ASKPASS="" && RUN_AS_ASKPASS=""&& shift;;
+        *) error "The following argument was not recognized: \"${i}\"\nExecute '$(basename $0) --help' for a list of available commands." && shift&&exit ;;
+  esac
+done
 
 #Run Command
-echo "Launching $application..."
-DUMMY=$(sudo sh -c "sudo pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY KDE_SESSION_VERSION=5 KDE_FULL_SESSION=true $commandLine >/dev/null 2>&1 &")
+if [ "$commandToExec" = "" ]; then
+    printf "\e[1mgsudo:\e[21m \e[31merror:\e[0m Specify the command you want to execute using '$(basename $0) --execute=\"command\"'\nFor more information execute '$(basename $0) --help'\n"
+else
+    echo "Launching ${commandToExec}..."
+    DUMMY=$(SUDO_ASKPASS=${SUDO_ASKPASS} sudo ${RUN_AS_ASKPASS} sh -c "sudo pkexec env $ENVIRONMENT_VARIABLES $commandToExec >${OVERWRITE_STDOUT_FILE}${STDOUT} 2>${OVERWRITE_STDERR_FILE}${STDERR} ${RUN_IN_BACKGROUND}")
+    return_code=$?
+    if $SHOW_RETURN_CODE; then
+        #FIXME add something for background processess too
+        if [ "$RUN_IN_BACKGROUND" != "&" ]; then
+            echo Return code: $return_code
+        fi
+    fi
+    sleep $SLEEP_TIME_BEFORE_EXITTING
+fi
