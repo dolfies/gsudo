@@ -1,6 +1,33 @@
 #!/bin/bash
 
 #Functions
+helpCommand () {
+    echo "gsudo v$VERSION"
+    echo "------------------------------------------------------------"
+    echo "Usage: gsudo --execute=application"
+    echo "       gsudo --execute=application {options}"
+    printf "\n"
+    echo "Options:"
+    echo "--execute=\"app -vv --option --arg=val\"    Execute a program"
+    echo "--sleep-before-exit NUMBER[s, m, h]       Sleeps for NUMBER seconds/minutes/hours before exitting"
+    echo "--stdout|-o=/path/to/stdout               Path to file where regular output should be written"
+    echo "--stderr|-e=/path/to/stdout               Path to file where error messages should be written"
+    echo "--environment-append=\"VARIABLE1=a,...\"    Append environment variables to the default ones"
+    echo "--environment-variables=\"VARIABLE1=a,...\" Overwrite default environment variables"
+    echo "--environment-file=FILEPATH               Read environment from a file with following format: env=val env2=val2"
+    echo "---------------------------------------------------------------------------------------------------------------"
+    echo "-?|--help                                 Shows this help message"
+    echo "-v|--version                              Shows gsudo's version and exits"
+    echo "-a|--about                                Shows information about gsudo and exits"
+    echo "---------------------------------------------------------------------------------------------------------------"
+    echo "--overwrite-stdout-file                   Overwrites stdout file instead of appending to it (see --stdout)"
+    echo "--overwrite-stderr-file                   Overwrites stderr file instead of appending to it (see --stderr)"
+    echo "--no-askpass                              Disables usage of an askpass script/program"
+    echo "--not-background                          Does not run in background"
+    echo "--hide-return-code                        Hides return code (always on for background tasks)"
+    echo "---------------------------------------------------------------------------------------------------------------"
+    echo "STDOUT is the regular text printed to the terminal, STDERR is the text indicating about errors."
+}
 
 aboutCommand () {
     echo "gsudo v$VERSION"
@@ -32,34 +59,6 @@ ENVIRONMENT_VARIABLES="DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY KDE_SESSION_VERSI
 RUN_AS_ASKPASS=""
 RUN_IN_BACKGROUND="&"
 SHOW_RETURN_CODE=true
-
-helpCommand () {
-    echo "gsudo v$VERSION"
-    echo "------------------------------------------------------------"
-    echo "Usage: gsudo --execute=application"
-    echo "       gsudo --execute=application {options}"
-    printf "\n"
-    echo "Options:"
-    echo "--execute=\"app -vv --option --arg=val\"    Execute a program"
-    echo "--sleep-before-exit NUMBER[s, m, h]       Sleeps for NUMBER seconds/minutes/hours before exitting"
-    echo "--stdout|-o=/path/to/stdout               Path to file where regular output should be written"
-    echo "--stderr|-e=/path/to/stdout               Path to file where error messages should be written"
-    echo "--environment-append=\"VARIABLE1=a,...\"    Append environment variables to the default ones"
-    echo "--environment-variables=\"VARIABLE1=a,...\" Overwrite default environment variables"
-    echo "--environment-file=FILEPATH               Read environment from a file with following format: env=val env2=val2"
-    echo "---------------------------------------------------------------------------------------------------------------"
-    echo "-?|--help                                 Shows this help message"
-    echo "-v|--version                              Shows gsudo's version and exits"
-    echo "-a|--about                                Shows information about gsudo and exits"
-    echo "---------------------------------------------------------------------------------------------------------------"
-    echo "--overwrite-stdout-file                   Overwrites stdout file instead of appending to it (see --stdout)"
-    echo "--overwrite-stderr-file                   Overwrites stderr file instead of appending to it (see --stderr)"
-    echo "--no-askpass                              Disables usage of an askpass script/program"
-    echo "--not-background                          Does not run in background"
-    echo "--hide-return-code                        Hides return code (always on for background tasks)"
-    echo "---------------------------------------------------------------------------------------------------------------"
-    echo "STDOUT is the regular text printed to the terminal, STDERR is the text indicating about errors."
-}
 
 # Gets askpass solution FIXME, add more
 if [ "$(which kdialog)" != "/usr/bin/which: no kdialog in ($PATH)" ]; then
